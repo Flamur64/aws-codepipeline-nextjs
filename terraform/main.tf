@@ -58,6 +58,18 @@ resource "aws_codepipeline" "pipeline" {
       }
     }
   }
+
+  stage {
+    name = "Approval"
+    action {
+      name     = "Manual_Approval"
+      category = "Approval"
+      owner    = "AWS"
+      provider = "Manual"
+      version  = "1"
+    }
+  }
+
   stage {
     name = "Deploy"
 
@@ -76,6 +88,7 @@ resource "aws_codepipeline" "pipeline" {
     }
   }
 }
+
 
 resource "aws_iam_role" "pipeline" {
   name = "${var.project_name}-pipeline-role"
@@ -424,10 +437,19 @@ resource "aws_security_group" "allow_ssh" {
   }
 
 }
+data "aws_ami" "latest_ubuntu_linux" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+}
 
 resource "aws_launch_configuration" "example" {
   name_prefix          = var.project_name
-  image_id             = var.instance_ami
+  image_id             = data.aws_ami.latest_ubuntu_linux.id
   instance_type        = var.instance_type
   iam_instance_profile = aws_iam_instance_profile.s3_access_profile.name
 
