@@ -40,7 +40,6 @@ resource "aws_codepipeline" "pipeline" {
     }
   }
 
-
   stage {
     name = "Build"
 
@@ -60,9 +59,22 @@ resource "aws_codepipeline" "pipeline" {
   }
 
   stage {
-    name = "Approval"
+    name = "Staging"
+
     action {
-      name     = "Manual_Approval"
+      name            = "Staging"
+      category        = "Approval"
+      owner           = "AWS"
+      provider        = "Manual"
+      version         = "1"
+    }
+  }
+
+  stage {
+    name = "Manual"
+
+    action {
+      name     = "ManualApproval"
       category = "Approval"
       owner    = "AWS"
       provider = "Manual"
