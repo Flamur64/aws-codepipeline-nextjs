@@ -62,19 +62,24 @@ resource "aws_codepipeline" "pipeline" {
     name = "Staging"
 
     action {
-      name            = "Staging"
-      category        = "Approval"
+      name            = "DeployToStaging"
+      category        = "Deploy"
       owner           = "AWS"
-      provider        = "Manual"
+      provider        = "CodeDeploy"
+      input_artifacts = ["build_output"]
       version         = "1"
+
+      configuration = {
+        ApplicationName     = aws_codedeploy_app.starter.name
+        DeploymentGroupName = aws_codedeploy_deployment_group.staging.deployment_group_name
+      }
     }
   }
 
   stage {
-    name = "Manual"
-
+    name = "Approval"
     action {
-      name     = "ManualApproval"
+      name     = "Manual_Approval"
       category = "Approval"
       owner    = "AWS"
       provider = "Manual"
@@ -308,6 +313,24 @@ resource "aws_iam_role_policy" "codebuild_s3" {
   ]
 }
 EOF
+}
+
+resource "aws_codedeploy_deployment_group" "staging" {
+  app_name              = aws_codedeploy_app.starter.name
+  deployment_group_name = "${var.project_name}-staging"
+  service_role_arn      = aws_iam_role.codedeploy.arn
+
+  autoscaling_groups = [aws_autoscaling_group.example.name]
+
+  deployment_config_name = "CodeDeployDefault.OneAtATime"
+
+  ec2_tag_set {
+    ec2_tag_filter {
+      key   = "Name"
+      type  = "KEY_AND_VALUE"
+      value = var.project_name
+    }
+  }
 }
 
 resource "aws_codedeploy_app" "starter" {
